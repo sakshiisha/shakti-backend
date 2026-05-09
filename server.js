@@ -13,6 +13,9 @@ import emergencySocket from './sockets/emergency.socket.js'
 const app    = express()
 const server = http.createServer(app)
 
+// PORT (FIX: define before usage in / route)
+const PORT = process.env.PORT || 5000
+
 // CORS options — ek jagah define karo
 const corsOptions = {
   origin: [
@@ -71,7 +74,7 @@ app.use((err, req, res, next) => {
 communitySocket(io)
 emergencySocket(io)
 
-const PORT = process.env.PORT || 5000
+// Server start
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`)
