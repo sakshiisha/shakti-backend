@@ -32,8 +32,8 @@ connectDB()
 // CORS — sabse pehle lagao
 app.use(cors(corsOptions))
 
-// OPTIONS preflight handle karo
-app.options('*', cors(corsOptions))
+// ✅ FIXED preflight for Express 5 (THIS WAS CRASHING BEFORE)
+app.options(/.*/, cors(corsOptions))
 
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
@@ -63,7 +63,6 @@ app.use((err, req, res, next) => {
 
 communitySocket(io)
 emergencySocket(io)
-
 
 const PORT = process.env.PORT || 5000
 server.listen(PORT, () => {
