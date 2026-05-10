@@ -13,81 +13,69 @@ import emergencySocket from './sockets/emergency.socket.js'
 const app    = express()
 const server = http.createServer(app)
 
+// PORT (FIX: define before usage in / route)
+const PORT = process.env.PORT || 5000
 
-// ⭐⭐⭐ PRODUCTION READY CORS (VERCEL FIX)
-const allowedOrigins = [
-  'http://localhost:3000',
-  process.env.CLIENT_URL, // production main domain
-]
-
+// CORS options — ek jagah define karo
 const corsOptions = {
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true)
-
-    // allow localhost + env domain
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true)
-    }
-
-    // ⭐ allow ALL vercel deployments (preview + production)
-    if (origin.includes('.vercel.app')) {
-      return callback(null, true)
-    }
-
-    return callback(new Error('Not allowed by CORS'))
-  },
+  origin: [
+    'http://localhost:3000',
+    process.env.CLIENT_URL || 'http://localhost:3000',
+  ],
   credentials: true,
-  methods: ['GET','POST','PUT','DELETE','OPTIONS'],
-  allowedHeaders: ['Content-Type','Authorization'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
 }
 
-const io = new Server(server, { cors: corsOptions })
+const io = new Server(server, {
+  cors: corsOptions,
+})
 
+// DB connect
 connectDB()
 
-// CORS sabse pehle
-app.use(cors(corsOptions))
-
-// ⭐ Express 5 preflight fix
-app.options(/.*/, cors(corsOptions))
-
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: 'cross-origin' },
-}))
-
+// Middleware
+app.use(helmet())
+app.use(cors(corsOptions))        // same corsOptions use karo
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
-// socket io available in routes
+// Socket.io har request mein available ho
 app.use((req, res, next) => {
   req.io = io
   next()
 })
 
-// Routes
+// All routes
 app.use('/api', routes)
 
 // Health check
 app.get('/', (req, res) => {
-  res.json({ message: 'SHAKTI Server running 🌸', status: 'OK' })
+  res.json({
+    message: 'SHAKTI Server running 🌸',
+    status: 'OK',
+    port: PORT,
+  })
 })
 
-// 404 handler
+// 404 handler — koi route match nahi hua
 app.use((req, res) => {
   res.status(404).json({ message: `Route ${req.originalUrl} not found` })
 })
 
-// Error handler
+// Global error handler
 app.use((err, req, res, next) => {
   console.error(err.stack)
-  res.status(err.status || 500).json({ message: err.message || 'Server Error' })
+  res.status(err.status || 500).json({
+    message: err.message || 'Internal Server Error',
+  })
 })
 
-// sockets
+// Sockets
 communitySocket(io)
 emergencySocket(io)
 
-const PORT = process.env.PORT || 5000
+// Server start
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`)
 })
