@@ -6,6 +6,7 @@ import periodRoutes    from './period.routes.js'
 import moodRoutes      from './mood.routes.js'
 import privateRoutes   from './private.routes.js'
 import emergencyRoutes from './emergency.routes.js'
+import peerShareRoutes from './peershare.routes.js'
 
 const router = express.Router()
 
@@ -16,5 +17,6 @@ router.use('/period',    periodRoutes)
 router.use('/mood',      moodRoutes)
 router.use('/private',   privateRoutes)
 router.use('/emergency', emergencyRoutes)
+router.use('/peershare', peerShareRoutes)
 
 export default router

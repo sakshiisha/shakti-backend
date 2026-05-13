@@ -17,7 +17,7 @@ export const getMyConcerns = async (req, res) => {
   try {
     const issues = await PrivateIssue.find({ user: req.user.id })
       .sort({ createdAt: -1 })
-      .select('-concern')
+  .select('-concern')
     res.json({ success: true, issues })
   } catch (error) {
     res.status(500).json({ message: error.message })
