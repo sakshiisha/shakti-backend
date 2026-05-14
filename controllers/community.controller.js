@@ -1,7 +1,22 @@
 import CommunityPost from '../models/CommunityPost.js'
 import User          from '../models/User.js'
 
-// GET NEARBY POSTS
+// Distance check — kya post user ke radius mein hai?
+const isWithinRadius = (postCoords, userLat, userLng, radiusMeters) => {
+  const [pLng, pLat] = postCoords
+  const R    = 6371000
+  const dLat = ((pLat - userLat) * Math.PI) / 180
+  const dLng = ((pLng - userLng) * Math.PI) / 180
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((userLat * Math.PI) / 180) *
+    Math.cos((pLat  * Math.PI) / 180) *
+    Math.sin(dLng / 2) ** 2
+  const dist = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  return dist <= radiusMeters
+}
+
+// ─── GET NEARBY POSTS ───────────────────────────────────────────────────────
 export const getNearbyPosts = async (req, res) => {
   try {
     const { lat, lng, radius = 2000 } = req.query
@@ -11,32 +26,32 @@ export const getNearbyPosts = async (req, res) => {
     }
 
     let posts = []
+
     try {
       posts = await CommunityPost.find({
         isActive:  true,
         expiresAt: { $gt: new Date() },
-        'location.coordinates': {
+        location: {
           $nearSphere: {
             $geometry: {
-              type: 'Point',
+              type:        'Point',
               coordinates: [parseFloat(lng), parseFloat(lat)],
             },
             $maxDistance: parseInt(radius),
           },
         },
       })
-      .populate('user', 'fullName')
-      .sort({ createdAt: -1 })
-      .limit(20)
+        .populate('user', 'fullName')
+        .limit(30)
     } catch (geoErr) {
-      // Fallback — bina geo query ke sab recent posts
+      // Geo index nahi — fallback
       posts = await CommunityPost.find({
         isActive:  true,
         expiresAt: { $gt: new Date() },
       })
-      .populate('user', 'fullName')
-      .sort({ createdAt: -1 })
-      .limit(20)
+        .populate('user', 'fullName')
+        .sort({ createdAt: -1 })
+        .limit(30)
     }
 
     res.json({ success: true, posts })
@@ -46,7 +61,7 @@ export const getNearbyPosts = async (req, res) => {
   }
 }
 
-// CREATE POST
+// ─── CREATE POST ─────────────────────────────────────────────────────────────
 export const createPost = async (req, res) => {
   try {
     const { text, lat, lng, area, type, isAnonymous = true } = req.body
@@ -58,10 +73,10 @@ export const createPost = async (req, res) => {
     const user = await User.findById(req.user.id)
 
     const post = await CommunityPost.create({
-      user:        req.user.id,
-      userName:    isAnonymous ? 'Anonymous' : (user?.fullName || 'Anonymous'),
-      text:        text.trim(),
-      type:        type || 'general',
+      user:     req.user.id,
+      userName: isAnonymous ? 'Anonymous' : (user?.fullName || 'Anonymous'),
+      text:     text.trim(),
+      type:     type || 'general',
       location: {
         area:        area || 'Nearby',
         type:        'Point',
@@ -69,14 +84,18 @@ export const createPost = async (req, res) => {
       },
     })
 
-    // Socket.io — real-time broadcast
+    // ✅ FIX: location bhi bhejo — frontend filter kar sake
     if (req.io) {
       req.io.emit('new-community-post', {
         _id:      post._id,
         text:     post.text,
         userName: post.userName,
-        area:     post.location.area,
         type:     post.type,
+        helpCount: 0,
+        location: {
+          area:        post.location.area,
+          coordinates: post.location.coordinates,
+        },
         createdAt: post.createdAt,
       })
     }
@@ -88,7 +107,7 @@ export const createPost = async (req, res) => {
   }
 }
 
-// MARK HELPED
+// ─── MARK HELPED ─────────────────────────────────────────────────────────────
 export const markHelped = async (req, res) => {
   try {
     const post = await CommunityPost.findByIdAndUpdate(
@@ -104,7 +123,6 @@ export const markHelped = async (req, res) => {
       return res.status(404).json({ message: 'Post not found' })
     }
 
-    // Socket — helper ko notify karo
     if (req.io) {
       req.io.emit('post-helped', {
         postId:    post._id,
@@ -118,7 +136,7 @@ export const markHelped = async (req, res) => {
   }
 }
 
-// DELETE POST
+// ─── DELETE POST ─────────────────────────────────────────────────────────────
 export const deletePost = async (req, res) => {
   try {
     const post = await CommunityPost.findOneAndUpdate(
@@ -137,15 +155,13 @@ export const deletePost = async (req, res) => {
   }
 }
 
-// START CHAT — post ke saath chat room banao
+// ─── START CHAT ──────────────────────────────────────────────────────────────
 export const startChat = async (req, res) => {
   try {
     const post = await CommunityPost.findById(req.params.id)
     if (!post) return res.status(404).json({ message: 'Post not found' })
 
-    // Chat room ID — post ID se
     const chatRoom = `chat_${post._id}`
-
     await CommunityPost.findByIdAndUpdate(req.params.id, { chatRoom })
 
     res.json({ success: true, chatRoom })

@@ -1,25 +1,38 @@
 const communitySocket = (io) => {
   io.on('connection', (socket) => {
 
-    // Room join karo
+    // ─── Room join ──────────────────────────────────────────────────────────
     socket.on('join-room', (room) => {
       socket.join(room)
-      console.log(`User joined room: ${room}`)
+      console.log(`[Socket] ${socket.id} joined room: ${room}`)
     })
 
-    // Room mein message bhejo
+    // ─── Chat message ────────────────────────────────────────────────────────
     socket.on('send-message', (msg) => {
-      // Room ke saare users ko message bhejo
-      socket.to(msg.room).emit('chat-message', msg)
+      if (!msg?.room || !msg?.text) return
+
+      const payload = {
+        room:     msg.room,
+        text:     msg.text,
+        userName: msg.userName || 'Anonymous',
+        time:     msg.time || new Date().toLocaleTimeString('en-IN', {
+          hour: '2-digit', minute: '2-digit'
+        }),
+      }
+
+      // Doosre room members ko bhejo
+      socket.to(msg.room).emit('chat-message', payload)
     })
 
-    // Area join karo (community feed ke liye)
+    // ─── Location-based area join ────────────────────────────────────────────
     socket.on('join-area', (area) => {
-      socket.join(area)
+      socket.join(`area_${area}`)
+      console.log(`[Socket] ${socket.id} joined area: ${area}`)
     })
 
+    // ─── Disconnect ──────────────────────────────────────────────────────────
     socket.on('disconnect', () => {
-      console.log('User disconnected:', socket.id)
+      console.log('[Socket] User disconnected:', socket.id)
     })
   })
 }
