@@ -1,19 +1,16 @@
 import mongoose from 'mongoose'
 
 const communityPostSchema = new mongoose.Schema({
-  user: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true,
-  },
-  userName: { type: String, default: 'Anonymous' }, // ← name store karo
-  text:     { type: String, required: true, maxlength: 500 },
-  type:     { type: String, enum: ['general', 'distress'], default: 'general' },
+  user:        { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  userName:    { type: String, default: 'Anonymous' },
+  text:        { type: String, required: true, maxlength: 500 },
+  type:        { type: String, enum: ['general', 'distress'], default: 'distress' },
+  isAnonymous: { type: Boolean, default: true },
 
   location: {
-    area: { type: String, default: '' },
-    type: { type: String, enum: ['Point'], default: 'Point' },
-    coordinates: { type: [Number], default: [0, 0] }, // [lng, lat]
+    area:        { type: String, default: '' },
+    type:        { type: String, enum: ['Point'], default: 'Point' },
+    coordinates: { type: [Number], default: [0, 0] },
   },
 
   helpedBy:  [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
@@ -21,11 +18,8 @@ const communityPostSchema = new mongoose.Schema({
   isActive:  { type: Boolean, default: true },
   expiresAt: {
     type:    Date,
-    default: () => new Date(Date.now() + 24 * 60 * 60 * 1000),
+    default: () => new Date(Date.now() + 6 * 60 * 60 * 1000), // 6 hours
   },
-
-  // Chat room ke liye
-  chatRoom: { type: String, default: null },
 
 }, { timestamps: true })
 
