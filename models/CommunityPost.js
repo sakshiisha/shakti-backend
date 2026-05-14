@@ -16,13 +16,19 @@ const communityPostSchema = new mongoose.Schema({
   helpedBy:  [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   helpCount: { type: Number, default: 0 },
   isActive:  { type: Boolean, default: true },
+
+  // ⏰ AUTO DELETE AFTER TIME
   expiresAt: {
     type:    Date,
-    default: () => new Date(Date.now() + 6 * 60 * 60 * 1000), // 6 hours
+    default: () => new Date(Date.now() + 6 * 60 * 60 * 1000),
   },
 
 }, { timestamps: true })
 
+// Geo index for nearby search
 communityPostSchema.index({ location: '2dsphere' })
+
+// ⭐ TTL index — Mongo auto delete
+communityPostSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 })
 
 export default mongoose.model('CommunityPost', communityPostSchema)
