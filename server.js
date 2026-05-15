@@ -7,8 +7,9 @@ import 'dotenv/config'
 
 import connectDB       from './config/db.js'
 import routes          from './routes/index.js'
-import communitySocket from './sockets/community.socket.js'
-import emergencySocket from './sockets/emergency.socket.js'
+//import communitySocket from './sockets/community.socket.js'
+//import emergencySocket from './sockets/emergency.socket.js'
+import mainSocket from './sockets/main.socket.js'
 
 const app    = express()
 const server = http.createServer(app)
@@ -71,8 +72,7 @@ app.use((err, req, res, next) => {
 })
 
 // Sockets
-communitySocket(io)
-emergencySocket(io)
+mainSocket(io) 
 
 // Server start
 server.listen(PORT, () => {

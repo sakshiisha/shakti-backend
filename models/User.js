@@ -13,6 +13,8 @@ const userSchema = new mongoose.Schema(
       name: { type: String, default: '' },
       phone: { type: String, default: '' },
     },
+    
+    fcmToken: { type: String, default: null },
 
     role: {
       type: String,

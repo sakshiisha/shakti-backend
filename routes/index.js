@@ -8,6 +8,7 @@ import privateRoutes   from './private.routes.js'
 import emergencyRoutes from './emergency.routes.js'
 import peerRoutes      from './peer.routes.js'
 import placesRoutes    from './places.route.js'
+import supportRoutes   from './support.routes.js'
 
 const router = express.Router()
 
@@ -18,7 +19,8 @@ router.use('/period',    periodRoutes)
 router.use('/mood',      moodRoutes)
 router.use('/private',   privateRoutes)
 router.use('/emergency', emergencyRoutes)
-router.use('/peer',      peerRoutes)     // ✅ /peershare → /peer
-router.use('/places',    placesRoutes)   // ✅ './' → '/'
+router.use('/peer',      peerRoutes)
+router.use('/places',    placesRoutes)
+router.use('/support',   supportRoutes)
 
 export default router
